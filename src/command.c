@@ -1,11 +1,22 @@
+#include <string.h>
+#include <stdio.h>
 #include "command.h"
 #include "olc.h"
 #include "main.h"
+#include "color.h"
 
 
 void cmd_look(struct connection *conn, char *args) {
     room *current_room = conn->current_room;
     char response[2048];
+
+
+    char room_name[ROOM_NAME_MAX + 16];
+    colorize(room_name, sizeof(room_name), COLOR_CYAN, current_room->name);
+    char room_desc[ROOM_DESC_MAX + 16];
+    colorize(room_desc, sizeof(room_desc), COLOR_GREEN, current_room->description);
+    snprintf(response, sizeof(response), "%s.\n\n%s\n\n", room_name, room_desc);
+
 
     int has_exits = 0;
     for(int i = 0; i < NUM_DIRECTIONS; i++) {
@@ -15,18 +26,23 @@ void cmd_look(struct connection *conn, char *args) {
         }
     }
 
-    snprintf(response, sizeof(response), "You are in %s.\n%s\nExits: ", current_room->name, current_room->description);
-    if (!has_exits) {
-        strcat(response, "None");
-    }
+    char exit_list[256] = "";
 
     for (int i = 0; i < NUM_DIRECTIONS; i++) {
         if (current_room->exits[i]) {
-            strcat(response, direction_names[i]);
-            strcat(response, " ");
+            strcat(exit_list, direction_names[i]);
+            strcat(exit_list, " ");
         }
     }
-    strcat(response, "\n");
+
+    if (!has_exits) {
+        strcpy(exit_list, "None");
+    }
+    char colored_exit_list[strlen(exit_list) + 16];
+    colorize(colored_exit_list, sizeof(colored_exit_list), COLOR_YELLOW, exit_list);
+    strcat(response, "Exits: ");
+    strcat(response, colored_exit_list);
+    strcat(response, "\n\n");
     send(conn->sockfd, response, strlen(response), 0);
 }
 

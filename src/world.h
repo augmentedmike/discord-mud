@@ -1,6 +1,9 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+#define ROOM_NAME_MAX 80
+#define ROOM_DESC_MAX 1024
+
 enum direction
 {
     NORTH,
@@ -20,8 +23,8 @@ enum direction
 struct room
 {
     int id;
-    char name[80];
-    char description[1024];
+    char name[ROOM_NAME_MAX];
+    char description[ROOM_DESC_MAX];
     struct room *exits[NUM_DIRECTIONS];
     struct room *next;
     struct room *prev;

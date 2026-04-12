@@ -71,13 +71,20 @@ void handle_login(struct connection *conn) {
         memset(conn->player, 0, sizeof(struct player));
         strncpy(conn->player->name, name, sizeof(conn->player->name)-1);
         conn->player->name[sizeof(conn->player->name)-1] = '\0';
+
+        char suppress[] = {255, 251, 1};
+        send(conn->sockfd, suppress, 3, 0);
         send(conn->sockfd, "Enter password: ", 16, 0);
         conn->state = STATE_GET_PASSWORD;
     } else if (conn->state == STATE_GET_PASSWORD) {
+        char restore[] = {255, 252, 1};
+        send(conn->sockfd, restore, 3, 0);
+        send(conn->sockfd, "\n", 1, 0);
+
         char password[128];
         strncpy(password, conn->bufferin, sizeof(password)-1);
         password[sizeof(password)-1] = '\0';
-
+        
         char filepath[64];
         snprintf(filepath, sizeof(filepath), "players/%s.dat", conn->player->name);
         FILE *file = fopen(filepath, "r");
@@ -98,7 +105,9 @@ void handle_login(struct connection *conn) {
                 conn->active = 0;
                 return;
             }
-            send(conn->sockfd, "Login successful!\n", 18, 0);
+            char welcome_msg[64];
+            snprintf(welcome_msg, sizeof(welcome_msg), "Welcome back, %s!\n\n\n", conn->player->name);
+            send(conn->sockfd, welcome_msg, strlen(welcome_msg), 0);
         }
         conn->state = STATE_PLAYING;
         cmd_look(conn, NULL);
@@ -129,9 +138,9 @@ void handle_client_input(struct connection *clients, fd_set *readfds) {
                         is_telnet_command = 1;
                         break;
                     }
-                    if (is_telnet_command) continue;
-                    if (strlen(clients[i].bufferin) == 0) continue;
                 }
+                if (is_telnet_command) continue;
+                if (strlen(clients[i].bufferin) == 0) continue;
 
                 if (clients[i].state == STATE_PLAYING) {
                     parse_command(&clients[i], clients[i].bufferin);
@@ -188,7 +197,7 @@ int main(void) {
         memset(starting_room, 0, sizeof(room));
         starting_room->id = 1;
         strcpy(starting_room->name, "The Void");
-        strcpy(starting_room->description, "Welcome to the world. You see nothing but a swirling mist. There is no determinate floor, ceiling, or walls.");
+        strcpy(starting_room->description, "You see nothing but a swirling mist. There is no determinate floor, ceiling, or walls.");
         add_room(starting_room);
     }
 
