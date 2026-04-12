@@ -33,10 +33,12 @@ struct connection
     int bufferin_len;
     int bufferout_len;
     struct room *current_room;
+    struct command *available_commands;
 };
 
 
 void handle_login(struct connection *conn);
+void cleanup_connection(struct connection *conn);
 
 extern struct connection clients[];
 

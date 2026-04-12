@@ -52,6 +52,8 @@ void handle_new_connection(int server_fd, struct connection *clients, room *star
             clients[i].active = 1;
             clients[i].addr = address;
             clients[i].current_room = starting_room;
+            clients[i].available_commands = NULL;
+            clients[i].player = NULL;
             found = 1;
             send(clients[i].sockfd, "What is your name?\n", 20, 0);
             break;
@@ -101,16 +103,58 @@ void handle_login(struct connection *conn) {
             hash_password(password, check_hash);
             if (strcmp(check_hash, conn->player->password_hash) != 0) {
                 send(conn->sockfd, "Invalid password. Connection closing.\n", 38, 0);
+                cleanup_connection(conn);
                 close(conn->sockfd);
                 conn->active = 0;
                 return;
             }
+
+
+
             char welcome_msg[64];
             snprintf(welcome_msg, sizeof(welcome_msg), "Welcome back, %s!\n\n\n", conn->player->name);
             send(conn->sockfd, welcome_msg, strlen(welcome_msg), 0);
         }
+
+
+        // assemble the available commands based on role - admin has all 3, builder has 2, and player has 1
+        // need to allocate a new array and copy the appropriate commands over
+        int num_player_cmds, num_builder_cmds, num_admin_cmds, total_cmds = 0;
+        for(num_player_cmds = 0; player_commands[num_player_cmds].name != NULL; num_player_cmds++);
+        for(num_builder_cmds = 0; builder_commands[num_builder_cmds].name != NULL; num_builder_cmds++);
+        for(num_admin_cmds = 0; admin_commands[num_admin_cmds].name != NULL; num_admin_cmds++);
+        if(conn->player->role >= ROLE_PLAYER) total_cmds += num_player_cmds;
+        if(conn->player->role >= ROLE_BUILDER) total_cmds += num_builder_cmds;
+        if(conn->player->role >= ROLE_ADMIN) total_cmds += num_admin_cmds;
+        conn->available_commands = malloc(sizeof(struct command) * (total_cmds + 1));
+        int cmd_index = 0;
+        if(conn->player->role >= ROLE_PLAYER) {
+            for(int i = 0; i < num_player_cmds; i++) {
+                conn->available_commands[cmd_index++] = player_commands[i];
+            }
+        }
+        if(conn->player->role >= ROLE_BUILDER) {
+            for(int i = 0; i < num_builder_cmds; i++) {
+                conn->available_commands[cmd_index++] = builder_commands[i];
+            }
+        }
+        if(conn->player->role >= ROLE_ADMIN) {
+            for(int i = 0; i < num_admin_cmds; i++) {
+                conn->available_commands[cmd_index++] = admin_commands[i];
+            }
+        }
+        conn->available_commands[cmd_index].name = NULL; // null terminate the command list
+
         conn->state = STATE_PLAYING;
         cmd_look(conn, NULL);
+    }
+}
+
+void cleanup_connection(struct connection *conn) {
+    free(conn->player);
+    conn->state = STATE_GET_NAME;
+    if(conn->available_commands) {
+        free(conn->available_commands);
     }
 }
 
@@ -118,11 +162,9 @@ void handle_client_input(struct connection *clients, fd_set *readfds) {
     for (int i = 0; i < MAX_CLIENTS; i++) {
         if (clients[i].active && FD_ISSET(clients[i].sockfd, readfds)) {
             int valread = read(clients[i].sockfd, clients[i].bufferin, BUFFER_SIZE);
-            if (valread == 0) {
+            if (valread <= 0) {
                 close(clients[i].sockfd);
-                clients[i].active = 0;
-            } else if (valread < 0) {
-                close(clients[i].sockfd);
+                cleanup_connection(&clients[i]);
                 clients[i].active = 0;
             } else {
                 clients[i].bufferin[valread] = '\0';

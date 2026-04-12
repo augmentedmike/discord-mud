@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include "command.h"
@@ -15,7 +16,7 @@ void cmd_look(struct connection *conn, char *args) {
     colorize(room_name, sizeof(room_name), COLOR_CYAN, current_room->name);
     char room_desc[ROOM_DESC_MAX + 16];
     colorize(room_desc, sizeof(room_desc), COLOR_GREEN, current_room->description);
-    snprintf(response, sizeof(response), "%s.\n\n%s\n\n", room_name, room_desc);
+    snprintf(response, sizeof(response), "\n\n%s.\n\n%s\n\n", room_name, room_desc);
 
 
     int has_exits = 0;
@@ -48,6 +49,7 @@ void cmd_look(struct connection *conn, char *args) {
 
 void cmd_quit(struct connection *conn, char *args) {
     send(conn->sockfd, "Goodbye!\n", 9, 0);
+    cleanup_connection(conn);
     close(conn->sockfd);
     conn->active = 0;
 }
@@ -92,13 +94,22 @@ void cmd_say(struct connection *conn, char *args) {
 
 }
 
-struct command commands[] = {
+struct command player_commands[] = {
     {"look", cmd_look, 1},
-    {"roomedit", cmd_room_edit, 2},
     {"quit", cmd_quit, 2},
     {"move", cmd_move, 2},
     {"save", cmd_save, 4},
     {"say", cmd_say, 2},
+    {NULL, NULL, 0}
+};
+
+struct command builder_commands[] = {
+    {"roomedit", cmd_room_edit, 2},
+    {"save", cmd_save, 4},
+    {NULL, NULL, 0}
+};
+
+struct command admin_commands[] = {
     {NULL, NULL, 0}
 };
 
@@ -115,12 +126,14 @@ void parse_command(struct connection *conn, char *input) {
         send(conn->sockfd, "Please enter a command.\n", 24, 0);
         return;
     }
-    for (int i = 0; commands[i].name != NULL; i++) {
-        if (len >= commands[i].min_length && strncmp(cmd_name, commands[i].name, len) == 0) {
-            commands[i].handler(conn, args);
+
+    for (int i = 0; conn->available_commands[i].name != NULL; i++) {
+        if (len >= conn->available_commands[i].min_length && strncmp(cmd_name, conn->available_commands[i].name, len) == 0) {
+            conn->available_commands[i].handler(conn, args);
             return;
         }
     }
+
     int dir = str_to_direction(cmd_name);
     if (dir != -1) {
         cmd_move(conn, cmd_name);

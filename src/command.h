@@ -11,6 +11,10 @@ struct command {
     int min_length;
 };
 
+extern struct command player_commands[];
+extern struct command builder_commands[];
+extern struct command admin_commands[];
+
 void cmd_look(struct connection *conn, char *args);
 void cmd_quit(struct connection *conn, char *args);
 void cmd_move(struct connection *conn, char *args);

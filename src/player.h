@@ -1,8 +1,9 @@
 #ifndef player_H
 #define player_H
 
-#define ROLE_PLAYER 0
-#define ROLE_ADMIN 1
+#define ROLE_PLAYER  0
+#define ROLE_BUILDER 1
+#define ROLE_ADMIN   2
 
 struct player
 {
