@@ -1,0 +1,5 @@
+world
+*.o
+*.dat
+players/
+.DS_Store
