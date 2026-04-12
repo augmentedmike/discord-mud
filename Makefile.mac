@@ -1,0 +1,24 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -g -fsanitize=address
+LDFLAGS =
+SOURCES = $(wildcard src/*.c)
+BUILDDIR = build
+OBJECTS = $(patsubst src/%.c,$(BUILDDIR)/%.o,$(SOURCES))
+
+all: world
+
+run: world
+	ASAN_OPTIONS=detect_leaks=1 ./world
+
+world: $(OBJECTS)
+	$(CC) $(CFLAGS) -o world $(OBJECTS) $(LDFLAGS)
+
+$(BUILDDIR)/%.o: src/%.c | $(BUILDDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILDDIR):
+	mkdir -p $(BUILDDIR)
+
+clean:
+	rm -f world
+	rm -rf $(BUILDDIR)

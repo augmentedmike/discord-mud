@@ -27,19 +27,38 @@ A MUD-style server written from scratch in C. Not a game — a **place**. Users 
 
 ## Build
 
+### macOS
+
 ```
-gcc -o world src/*.c
+make
 ```
 
-macOS links CommonCrypto automatically. On Linux you may need `-lssl -lcrypto` or swap to OpenSSL SHA256.
+Uses CommonCrypto (ships with macOS, no extra dependencies).
+
+### Linux
+
+```
+sudo apt install libssl-dev   # Debian/Ubuntu
+make
+```
+
+Uses OpenSSL for SHA256. The Makefile auto-detects the platform.
+
+### Windows
+
+Use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) (Windows Subsystem for Linux), then follow the Linux instructions above.
 
 ## Run
 
 ```
-./world
+make run
 ```
 
-Server starts on port 4200.
+Builds and starts the server on port 4200 with AddressSanitizer leak detection enabled. Or run directly:
+
+```
+./world
+```
 
 ## Connect
 
@@ -78,6 +97,7 @@ src/
   olc.h       — OLC declarations
   player.c    — player save/load, password hashing
   player.h    — player struct, role defines
+  compat.h    — platform abstraction (macOS/Linux crypto)
   color.c     — ANSI color helpers
   color.h     — color code defines
 ```
@@ -98,7 +118,6 @@ ENDROOM
 
 ## Roadmap
 
-- Player roles / admin permissions for OLC access
 - Room flags (dark, no-chat, safe zone)
 - Embedded scripting language for room triggers and automation
 - Item/object system

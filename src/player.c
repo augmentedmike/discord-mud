@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <CommonCrypto/CommonDigest.h>
 #include <string.h>
 
+#include "compat.h"
 #include "player.h"
 
 

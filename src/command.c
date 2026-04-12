@@ -8,6 +8,7 @@
 
 
 void cmd_look(struct connection *conn, char *args) {
+    (void)args; // unused
     room *current_room = conn->current_room;
     char response[2048];
 
@@ -48,6 +49,7 @@ void cmd_look(struct connection *conn, char *args) {
 }
 
 void cmd_quit(struct connection *conn, char *args) {
+    (void)args; // unused
     send(conn->sockfd, "Goodbye!\n", 9, 0);
     cleanup_connection(conn);
     close(conn->sockfd);
