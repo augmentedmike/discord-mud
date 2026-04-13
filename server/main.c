@@ -1,8 +1,10 @@
+#include <signal.h>
+#include <string.h>
+#include <errno.h>
+
 #include "main.h"
 #include "command.h"
 #include "player.h"
-#include <signal.h>
-#include <errno.h>
 
 
 int server_fd;
@@ -64,6 +66,15 @@ void handle_new_connection(int server_fd, struct connection *clients, room *star
     }
 }
 
+struct connection *find_connected_player(const char *name) {
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (clients[i].active && clients[i].player && strcmp(clients[i].player->name, name) == 0) {
+            return &clients[i];
+        }
+    }
+    return NULL;
+}
+
 void handle_login(struct connection *conn) {
     if (conn->state == STATE_GET_NAME) {
         char name[32];
@@ -94,6 +105,9 @@ void handle_login(struct connection *conn) {
             hash_password(password, conn->player->password_hash);
             conn->player->role = ROLE_PLAYER;
             conn->player->saved_room_id = 1;
+            conn->player->current_status = STATUS_STANDING;
+            strcpy(conn->player->short_description, "An adventurer");
+            strcpy(conn->player->long_description, "The stranger is wrapped in a heavy cloak, obscuring most of their features. They look ready for adventure, but you can't tell much else about them.");
             save_player(filepath, conn->player);
             send(conn->sockfd, "New player created!\n", 21, 0);
         } else {
@@ -144,6 +158,15 @@ void handle_login(struct connection *conn) {
             }
         }
         conn->available_commands[cmd_index].name = NULL; // null terminate the command list
+
+
+        struct connection *old_conn = find_connected_player(conn->player->name);
+        if (old_conn && old_conn != conn) {
+            send(old_conn->sockfd, "\nYour character has been taken over by another connection.\n", 59, 0);
+            cleanup_connection(old_conn);
+            close(old_conn->sockfd);
+            old_conn->active = 0;
+        }
 
         conn->state = STATE_PLAYING;
         cmd_look(conn, NULL);
@@ -219,7 +242,16 @@ void signal_handler(int signum) {
             close(clients[i].sockfd);
         }
     }
-    save_world("world.dat");
+    if (signum == SIGINT || signum == SIGTERM) {
+        save_world("world.dat");
+    }
+    for(int i = 0; i < MAX_CLIENTS; i++) {
+        if (clients[i].active && clients[i].player) {
+            char filepath[64];
+            snprintf(filepath, sizeof(filepath), "players/%s.dat", clients[i].player->name);
+            save_player(filepath, clients[i].player);
+        }
+    }
     close(server_fd);
     exit(EXIT_SUCCESS);
 }

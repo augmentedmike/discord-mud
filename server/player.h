@@ -1,6 +1,7 @@
 #ifndef player_H
 #define player_H
 
+#include "status.h"
 #define ROLE_PLAYER  0
 #define ROLE_BUILDER 1
 #define ROLE_ADMIN   2
@@ -11,6 +12,9 @@ struct player
     char password_hash[128];
     int role;
     int saved_room_id;
+    char short_description[256];
+    char long_description[1024];
+    enum status current_status;
 };
 
 void hash_password(const char *password, char *hash_out);

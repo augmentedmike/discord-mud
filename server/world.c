@@ -70,7 +70,12 @@ int str_to_direction(const char *str) {
 }
 
 void save_world(const char *filename) {
-    FILE *file = fopen(filename, "w");
+    if (!room_list) return;
+
+    char tmpfile[256];
+    snprintf(tmpfile, sizeof(tmpfile), "%s.tmp", filename);
+
+    FILE *file = fopen(tmpfile, "w");
     if (!file) {
         perror("Failed to save world");
         return;
@@ -91,6 +96,7 @@ void save_world(const char *filename) {
     }
 
     fclose(file);
+    rename(tmpfile, filename);
 }
 
 void load_world(const char *filename) {

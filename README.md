@@ -86,7 +86,7 @@ rlwrap telnet localhost 4200
 ## Architecture
 
 ```
-src/
+server/
   main.c      — server loop, connections, login flow
   main.h      — core includes, defines, connection struct
   world.c     — room management, linked list, save/load, directions

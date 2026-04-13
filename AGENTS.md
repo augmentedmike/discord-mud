@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # build (produces ./world binary)
-gcc -o world src/*.c
+gcc -o world server/*.c
 
 # run (listens on port 4200)
 ./world

@@ -10,7 +10,7 @@ void hash_password(const char *password, char *hash_out) {
     unsigned char hash[CC_SHA256_DIGEST_LENGTH];
     CC_SHA256(password, strlen(password), hash);
     for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; i++) {
-        sprintf(hash_out + (i * 2), "%02x", hash[i]);
+        snprintf(hash_out + (i * 2), 3, "%02x", hash[i]);
     }
     hash_out[CC_SHA256_DIGEST_LENGTH * 2] = '\0';
 }
@@ -25,6 +25,8 @@ void save_player(const char *filename, struct player *player) {
     fprintf(file, "PASSWORD_HASH %s\n", player->password_hash);
     fprintf(file, "ROLE %d\n", player->role);
     fprintf(file, "SAVED_ROOM_ID %d\n", player->saved_room_id);
+    fprintf(file, "SHORT_DESCRIPTION %s\n", player->short_description);
+    fprintf(file, "LONG_DESCRIPTION %s\n", player->long_description);
     fclose(file);
 }
 
@@ -34,7 +36,7 @@ void load_player(const char *filename, struct player *player) {
         perror("Failed to load player");
         return;
     }
-    char line[256];
+    char line[sizeof(player->long_description) + 64];
     while (fgets(line, sizeof(line), file)) {
         char *key = strtok(line, " ");
         char *value = strtok(NULL, "\n");
@@ -48,6 +50,14 @@ void load_player(const char *filename, struct player *player) {
             player->role = atoi(value);
         } else if (strcmp(key, "SAVED_ROOM_ID") == 0) {
             player->saved_room_id = atoi(value);
+        } else if (strcmp(key, "SHORT_DESCRIPTION") == 0) {
+            strncpy(player->short_description, value, sizeof(player->short_description)-1);
+            player->short_description[sizeof(player->short_description)-1] = '\0';
+        } else if (strcmp(key, "LONG_DESCRIPTION") == 0) {
+            strncpy(player->long_description, value, sizeof(player->long_description)-1);
+            player->long_description[sizeof(player->long_description)-1] = '\0';
+        } else if (strcmp(key, "CURRENT_STATUS") == 0) {
+            player->current_status = value ? atoi(value) : STATUS_STANDING;
         }
     }
     fclose(file);

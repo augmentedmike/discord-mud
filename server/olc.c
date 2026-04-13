@@ -73,6 +73,7 @@ void cmd_room_edit(struct connection *conn, char *args) {
 }
 
 void cmd_save(struct connection *conn, char *args) {
+    (void)args; // Unused parameter
     save_world("world.dat");
     send(conn->sockfd, "World saved.\n", 13, 0);
 }

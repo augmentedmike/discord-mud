@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -fsanitize=address
 LDFLAGS =
-SOURCES = $(wildcard src/*.c)
+SOURCES = $(wildcard server/*.c)
 BUILDDIR = build
-OBJECTS = $(patsubst src/%.c,$(BUILDDIR)/%.o,$(SOURCES))
+OBJECTS = $(patsubst server/%.c,$(BUILDDIR)/%.o,$(SOURCES))
 
 all: world
 
@@ -13,7 +13,7 @@ run: world
 world: $(OBJECTS)
 	$(CC) $(CFLAGS) -o world $(OBJECTS) $(LDFLAGS)
 
-$(BUILDDIR)/%.o: src/%.c | $(BUILDDIR)
+$(BUILDDIR)/%.o: server/%.c | $(BUILDDIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILDDIR):

@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -fsanitize=address
 LDFLAGS = -lssl -lcrypto
-SOURCES = $(wildcard src/*.c)                
+SOURCES = $(wildcard server/*.c)                
 OBJECTS = $(SOURCES:.c=.o)
 
 all: world
@@ -13,4 +13,4 @@ world: $(OBJECTS)
 	$(CC) $(CFLAGS) -o world $(OBJECTS) $(LDFLAGS)
 
 clean:
-	rm -f world src/*.o
+	rm -f world server/*.o

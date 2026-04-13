@@ -4,3 +4,6 @@ build/
 *.dat
 players/
 .DS_Store
+client/node_modules/
+client/.next/
+client/out/
